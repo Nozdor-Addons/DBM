@@ -1,74 +1,64 @@
-﻿local mod	= DBM:NewMod("Kologarn", "DBM-Ulduar")
+local mod	= DBM:NewMod("Kologarn", "DBM-Ulduar")
 local L		= mod:GetLocalizedStrings()
-DBM_COMMON_L = {}
-local CL = DBM_COMMON_L
-local bband = bit.band
-mod:SetRevision("20210501000000")
 
-mod:SetCreatureID(32930, 32933, 32934)
-mod:RegisterCombat("combat", 32930, 32933, 32934)
+mod:SetRevision(("$Revision: 280 $"):sub(12, -3))
+mod:SetCreatureID(32930)--, 32933, 32934
+mod:SetEncounterID(1137)
+mod:SetModelID(28638)
 mod:SetUsedIcons(5, 6, 7, 8)
+--mod:SetMinSyncRevision(4623)
+mod:SetMinSyncRevision(7)--Could break if someone is running out of date version with higher revision
 
+mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_SUCCESS 64003",
-	"SPELL_AURA_APPLIED 312758 312757 312760 312407 312405 312404 64290 64292 312748 312395 64002 63355 312748 64002",
-	"SPELL_AURA_APPLIED_DOSE 312758 312757 312760 312407 312405 312404 64290 64292 312748 312395 64002 63355 312748 64002",
-	"SPELL_AURA_REMOVED 312758 312757 312760 312407 312405 312404 64290 64292",
-	"SPELL_DAMAGE 312399 312752 63783 63982 312412 312765 63346 63976",
-	-- "SPELL_MISSED",
-	"UNIT_DIED"
-)
-mod:RegisterEvents(
-	"CHAT_MSG_RAID_BOSS_WHISPER"
-)
-
-mod:SetBossHealthInfo(
-	32930, L.Health_Body,
-	32934, L.Health_Right_Arm,
-	32933, L.Health_Left_Arm
+	"SPELL_AURA_APPLIED 64290 64292 64002 63355",
+	"SPELL_AURA_APPLIED_DOSE 64002",
+	"SPELL_AURA_REMOVED 64290 64292",
+	"SPELL_DAMAGE 63783 63982 63346 63976",
+	"SPELL_MISSED 63783 63982 63346 63976",
+	"RAID_BOSS_WHISPER",
+	"UNIT_DIED",
+	"UNIT_SPELLCAST_SUCCEEDED boss1"
 )
 
-local warnFocusedEyebeam		= mod:NewTargetAnnounce(312765, 3)
-local warnGrip					= mod:NewTargetAnnounce(312757, 2)
-local warnCrunchArmor			= mod:NewTargetAnnounce(312748, 2, nil, "Tank")
+local warnFocusedEyebeam		= mod:NewTargetAnnounce(63346, 3)
+local warnGrip					= mod:NewTargetAnnounce(64292, 2)
+local warnCrunchArmor			= mod:NewTargetAnnounce(64002, 2)
 
-local specWarnCrunchArmor2		= mod:NewSpecialWarningStack(312748, nil, 2, nil, 2, 1, 6)
-local specWarnEyebeam			= mod:NewSpecialWarningYou(312765, nil, nil, nil, 4, 2)
+local specWarnCrunchArmor2		= mod:NewSpecialWarningStack(64002, nil, 2, nil, 2, 1, 6)
+local specWarnEyebeam			= mod:NewSpecialWarningRun(63346, nil, nil, nil, 4, 2)
 local yellBeam					= mod:NewYell(63346)
 
-local timerCrunch10             = mod:NewTargetTimer(6, 312395)
-local timerNextSmash			= mod:NewCDTimer(20.4, 64003, nil, "Tank", nil, 5, nil, CL.TANK_ICON)
-local timerNextShockwave		= mod:NewCDTimer(23, 312752)
-local timerNextEyebeam			= mod:NewCDTimer(18.2, 63346, nil, nil, nil, 3)
+local timerCrunch10             = mod:NewTargetTimer(6, 63355)
+local timerNextSmash			= mod:NewCDTimer(20.4, 64003, nil, "Tank", nil, 5, nil, DBM_CORE_TANK_ICON)
+local timerNextShockwave		= mod:NewCDTimer(15.9, 63982, nil, nil, nil, 2)--15.9-20
+local timerNextEyebeam			= mod:NewCDTimer(20.4, 63346, nil, nil, nil, 3)
 local timerNextGrip				= mod:NewCDTimer(20, 64292, nil, nil, nil, 3)
 local timerRespawnLeftArm		= mod:NewTimer(48, "timerLeftArm", nil, nil, nil, 1)
 local timerRespawnRightArm		= mod:NewTimer(48, "timerRightArm", nil, nil, nil, 1)
 local timerTimeForDisarmed		= mod:NewTimer(10, "achievementDisarmed")	-- 10 HC / 12 nonHC
 
-
-
--- mod:AddBoolOption("HealthFrame", true)
-mod:AddSetIconOption("SetIconOnGripTarget", 64292, true, false, {7, 6, 5})
-mod:AddSetIconOption("SetIconOnEyebeamTarget", 63346, true, false, {8})
+mod:AddBoolOption("SetIconOnGripTarget", true)
+mod:AddBoolOption("SetIconOnEyebeamTarget", true)
 
 mod.vb.disarmActive = false
---local gripTargets = {}
+local gripTargets = {}
 
 local function armReset(self)
 	self.vb.disarmActive = false
 end
 
+local function GripAnnounce(self)
+	warnGrip:Show(table.concat(gripTargets, "<, >"))
+	table.wipe(gripTargets)
+end
+
 function mod:OnCombatStart(delay)
-	DBM:FireCustomEvent("DBM_EncounterStart", 32930, "Kologarn")
-	timerNextShockwave:Start(15.7)
 	timerNextSmash:Start(10-delay)
 	timerNextEyebeam:Start(11-delay)
 	timerNextShockwave:Start(15.7-delay)
-end
-
-function mod:OnCombatEnd(wipe)
-	DBM:FireCustomEvent("DBM_EncounterEnd", 32930, "Kologarn", wipe)
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
@@ -77,8 +67,43 @@ function mod:SPELL_CAST_SUCCESS(args)
 	end
 end
 
+function mod:SPELL_AURA_APPLIED(args)
+	if args:IsSpellID(64290, 64292) then
+		if self.Options.SetIconOnGripTarget then
+			self:SetIcon(args.destName, 8 - #gripTargets, 10)
+		end
+		table.insert(gripTargets, args.destName)
+		self:Unschedule(GripAnnounce)
+		if #gripTargets >= 3 then
+			GripAnnounce(self)
+		else
+			self:Schedule(0.3, GripAnnounce, self)
+		end
+	elseif args:IsSpellID(64002, 63355) then	-- Crunch Armor
+        warnCrunchArmor:Show(args.destName)
+    end
+end
+
+function mod:SPELL_AURA_APPLIED_DOSE(args)
+	if args.spellId == 64002 then		        -- Crunch Armor (25-man only)
+		warnCrunchArmor:Show(args.destName)
+        if args.amount >= 2 then 
+            if args:IsPlayer() then
+                specWarnCrunchArmor2:Show(args.amount)
+                specWarnCrunchArmor2:Play("stackhigh")
+            end
+		end
+	end
+end
+
+function mod:SPELL_AURA_REMOVED(args)
+	if args:IsSpellID(64290, 64292) then
+		self:SetIcon(args.destName, 0)
+    end
+end
+
 function mod:UNIT_DIED(args)
-	if self:GetCIDFromGUID(args.destGUID) == 32934 then 		-- Правая рука
+	if self:GetCIDFromGUID(args.destGUID) == 32934 then 		-- right arm
 		timerRespawnRightArm:Start()
 		timerNextGrip:Cancel()
 		if not self.vb.disarmActive then
@@ -86,7 +111,7 @@ function mod:UNIT_DIED(args)
 			timerTimeForDisarmed:Start(12)
 			self:Schedule(12, armReset, self)
 		end
-	elseif self:GetCIDFromGUID(args.destGUID) == 32933 then		-- Левая рука
+	elseif self:GetCIDFromGUID(args.destGUID) == 32933 then		-- left arm
 		timerRespawnLeftArm:Start()
 		if not self.vb.disarmActive then
 			self.vb.disarmActive = true
@@ -96,16 +121,14 @@ function mod:UNIT_DIED(args)
 	end
 end
 
-
-function mod:SPELL_DAMAGE(_, _, _, _, _, destFlags, spellId) -- надо чекнуть айдишники
-	if ((spellId == 312399 or spellId == 312752 or spellId == 63783 or spellId == 63982) and (bband(destFlags, COMBATLOG_OBJECT_AFFILIATION_MINE) ~= 0 and bband(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= 0)) then-- Ударная волна
-		timerNextShockwave:Start()
-	elseif ((spellId == 312412 or spellId == 312765 or spellId == 63346 or spellId == 63976) and (bband(destFlags, COMBATLOG_OBJECT_AFFILIATION_MINE) ~= 0 and bband(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) ~= 0)) then --Сосредоточенный взгляд
+function mod:SPELL_DAMAGE(_, _, _, _, destGUID, _, _, _, spellId)
+	if (spellId == 63346 or spellId == 63976) and destGUID == UnitGUID("player") and self:AntiSpam(2, 2) then
 		specWarnEyebeam:Show()
 	end
 end
+mod.SPELL_MISSED = mod.SPELL_DAMAGE
 
-function mod:CHAT_MSG_RAID_BOSS_WHISPER(msg)
+function mod:RAID_BOSS_WHISPER(msg)
 	if msg:find(L.FocusedEyebeam) then
 		specWarnEyebeam:Show()
 		specWarnEyebeam:Play("justrun")
@@ -114,51 +137,22 @@ function mod:CHAT_MSG_RAID_BOSS_WHISPER(msg)
 	end
 end
 
-function mod:OnSync(msg, target)
-	if msg == "EyeBeamOn" then
-		warnFocusedEyebeam:Show(target)
-		if target == UnitName("player") then
-			specWarnEyebeam:Show()
-			if self.Options.PlaySoundOnEyebeam then
-				DBM:PlaySoundFile("Sound\\Creature\\HoodWolf\\HoodWolfTransformPlayer01.wav")
+function mod:OnTranscriptorSync(msg, targetName)
+	if msg:find(L.FocusedEyebeam) then--
+		targetName = Ambiguate(targetName, "none")
+		if self:AntiSpam(5, targetName) then--Antispam sync by target name, since this doesn't use dbms built in onsync handler.
+			warnFocusedEyebeam:Show(targetName)
+			if self.Options.SetIconOnEyebeamTarget then
+				self:SetIcon(targetName, 5, 8) 
 			end
-		end
-		if self.Options.SetIconOnEyebeamTarget then
-			self:SetIcon(target, 5, 8)
 		end
 	end
 end
 
-function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(312758, 312757, 312760, 312407, 312405, 312404, 64290, 64292) then 	--Каменная хватка
-		if self.Options.SetIconOnGripTarget then
-			self:SetIcon(args.destName, 8, 10)
-		end
-		warnGrip:Show(args.destName)
-	elseif args:IsSpellID(312748, 312395, 64002, 63355) then	-- Хруст доспеха
-        warnCrunchArmor:Show(args.destName)
-		if mod:IsDifficulty("heroic10") then
-            timerCrunch10:Start(args.destName)  -- We track duration timer only in 10-man since it's only 6sec and tanks don't switch.
-		end
-	elseif args:IsSpellID(312748, 64002) then		        -- Хруст доспеха (25-man only)
-		local amount = args.amount or 1
-		if args.amount >= 2 then
-			if args:IsPlayer() then
-				specWarnCrunchArmor2:Show(amount)
-				specWarnCrunchArmor2:Play("stackhigh")
-			else
-				warnCrunchArmor:Show(args.destName, amount)
-			end
-		else
-			warnCrunchArmor:Show(args.destName, amount)
-		end
+function mod:UNIT_SPELLCAST_SUCCEEDED(uId, _, spellId)
+	if spellId == 63983 then--Arm Sweep
+		timerNextShockwave:Start()
+	elseif spellId == 63342 then--Focused Eyebeam Summon Trigger
+		timerNextEyebeam:Start()
 	end
 end
-
-function mod:SPELL_AURA_REMOVED(args)
-	if args:IsSpellID(312758, 312757, 312760, 312407, 312405, 312404, 64290, 64292) then  -- Вопрос дохуя хваток
-		self:RemoveIcon(args.destName)
-    end
-end
-
-mod.SPELL_AURA_APPLIED_DOSE = mod.SPELL_AURA_APPLIED

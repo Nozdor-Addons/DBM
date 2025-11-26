@@ -1,26 +1,29 @@
-## Interface: 30300
+## Interface: 80100
+## X-Min-Interface: 80000
 ## Title:|cffffe00a<|r|cffff7d0aDBM|r|cffffe00a>|r |cff69ccf0Ulduar|r
 ## Title-ruRU:|cffffe00a<|r|cffff7d0aDBM|r|cffffe00a>|r |cff69ccf0Ульдуар|r
 ## Title-koKR:|cffffe00a<|r|cffff7d0aDBM|r|cffffe00a>|r |cff69ccf0울두아르|r
 ## Title-zhTW:|cffffe00a<|r|cffff7d0aDBM|r|cffffe00a>|r |cff69ccf0奧杜亞|r
 ## Title-esES:|cffffe00a<|r|cffff7d0aDBM|r|cffffe00a>|r |cff69ccf0Ulduar|r
+## Author: Nitram
 ## LoadOnDemand: 1
-## Dependencies: DBM-Core
+## RequiredDeps: DBM-Core
 ## SavedVariables: DBMUlduar_AllSavedVars
 ## SavedVariablesPerCharacter: DBMUlduar_SavedStats
 ## X-DBM-Mod: 1
 ## X-DBM-Mod-Type: RAID
-## X-DBM-Mod-Category: WOTLK
-## X-DBM-StatTypes: normal,normal25
-## X-DBM-Mod-Name: Ulduar
+## X-DBM-Mod-Category: WotLK
+## X-DBM-Mod-Has-Single-Format: 1
+## X-DBM-Mod-Has-TimeWalker: 1
+## X-DBM-Mod-MapID: 603
+## X-DBM-Mod-Sort: 903
+## X-DBM-Mod-MinCoreRevision: 14002
+## X-DBM-Mod-LoadZone-ruRU: Ульдуар
 ## X-DBM-Mod-Name-ruRU: Ульдуар
 ## X-DBM-Mod-Name-koKR: 울두아르
 ## X-DBM-Mod-Name-zhTW: 奧杜亞
 ## X-DBM-Mod-Name-zhCN: 奥杜尔
 ## X-DBM-Mod-Name-esES: Ulduar
-## X-DBM-Mod-Sort: 4
-## X-DBM-Mod-MapID: 530
-## X-DBM-Mod-LoadZone: Ulduar
 ## X-DBM-Mod-LoadZone-frFR: Ulduar
 ## X-DBM-Mod-LoadZone-ruRU: Ульдуар
 ## X-DBM-Mod-LoadZone-koKR: 울두아르
@@ -30,15 +33,7 @@
 ## X-DBM-Mod-LoadZone-esMX: Ulduar
 ## X-DBM-Mod-LoadZone-deDE: Ulduar
 
-localization.en.lua
-localization.de.lua
-localization.fr.lua
 localization.ru.lua
-localization.tw.lua
-localization.kr.lua
-localization.tw.lua
-localization.es.lua
-localization.cn.lua
 FlameLeviathan.lua
 Ignis.lua
 Razorscale.lua

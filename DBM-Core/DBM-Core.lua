@@ -6264,6 +6264,23 @@ function DBM:HasMapRestrictions()
 	return false
 end
 
+function DBM:EJ_GetSectionInfo(sectionID)
+	if not isRetail then
+		return "EJ_GetSectionInfo not supported on Classic, please report this message and boss"
+	end
+	local info = EJ_GetSectionInfo(sectionID)
+	if not info then
+		self:Debug("|cffff0000Invalid call to EJ_GetSectionInfo for sectionID: |r" .. sectionID)
+		return
+	end
+	local flag1, flag2, flag3, flag4
+	local flags = GetSectionIconFlags(sectionID)
+	if flags then
+		flag1, flag2, flag3, flag4 = unpack(flags)
+	end
+	return info.title, info.description, info.headerType, info.abilityIcon, info.creatureDisplayID, info.siblingSectionID, info.firstChildSectionID, info.filteredByDifficulty, info.link, info.startsOpen, flag1, flag2, flag3, flag4
+end
+
 do
 	local LSMMediaCacheBuilt, sharedMediaFileCache, validateCache = false, {}, {}
 
@@ -9634,13 +9651,22 @@ do
 		if customName then
 			spellName = customName
 		else
-			spellName = (spellId or 0) >= 6 and DBM:GetSpellInfo(spellId) or CL.UNKNOWN
+			local sid = tonumber(spellId)
+			if sid and sid >= 6 then
+				spellName = DBM:GetSpellInfo(sid) or CL.UNKNOWN
+			else
+				spellName = CL and CL.UNKNOWN or "Unknown"
+			end
 		end
+
 		if announceType == "prewarn" then
 			if type(stacks) == "string" then
 				text = L.AUTO_SPEC_WARN_TEXTS[announceType]:format(spellName, stacks)
 			else
-				text = L.AUTO_SPEC_WARN_TEXTS[announceType]:format(spellName, L.SEC_FMT:format(tostring(stacks or 5)))
+				text = L.AUTO_SPEC_WARN_TEXTS[announceType]:format(
+					spellName,
+					L.SEC_FMT:format(tostring(stacks or 5))
+				)
 			end
 		else
 			if DBM.Options.SpamSpecInformationalOnly and specInstructionalRemapTable[announceType] then
@@ -11235,9 +11261,17 @@ do
 		-- todo: move the string creation to the GUI with SetFormattedString...
 		--//TODO Разобратся с ачивами
 		if timerType == "achievement" then
-			self.localization.options[id] = L.AUTO_TIMER_OPTIONS[timerType]:format(
-				GetAchievementLink(spellId):gsub("%[(.+)%]",
-					"%1"), timer)
+    	local link = GetAchievementLink and GetAchievementLink(spellId)
+    	local achName
+
+   		if link then
+    	    achName = link:gsub("%[(.+)%]", "%1")
+    	else
+    	    achName = tostring(spellId or "achievement")
+    	end
+
+    	local opt = L.AUTO_TIMER_OPTIONS[timerType] or "%s: %s"
+    	self.localization.options[id] = opt:format(achName, timer)
 		elseif timerType == "cdspecial" or timerType == "nextspecial" or timerType == "stage" or timerType == "roleplay" then --Timers without spellid, generic
 			self.localization.options[id] = L.AUTO_TIMER_OPTIONS[timerType]:format(timer)                               --Using more than 1 stage timer or more than 1 special timer will break this, fortunately you should NEVER use more than 1 of either in a mod
 		else
@@ -11838,6 +11872,79 @@ end
 
 function bossModPrototype:AddMiscLine(text)
 	return self:AddOptionLine(text, "misc", true)
+end
+
+function bossModPrototype:SetEncounterID(...)
+	self.encounterId = ...
+	if select("#", ...) > 1 then
+		self.multiEncounterPullDetection = {...}
+		if self.combatInfo then
+			self.combatInfo.multiEncounterPullDetection = self.multiEncounterPullDetection
+		end
+	end
+end
+
+function bossModPrototype:DisableESCombatDetection()
+	self.noESDetection = true
+	if self.combatInfo then
+		self.combatInfo.noESDetection = true
+	end
+end
+
+function bossModPrototype:DisableEEKillDetection()
+	self.noEEDetection = true
+	if self.combatInfo then
+		self.combatInfo.noEEDetection = true
+	end
+end
+
+function bossModPrototype:DisableBKKillDetection()
+	self.noBKDetection = true
+	if self.combatInfo then
+		self.combatInfo.noBKDetection = true
+	end
+end
+
+function bossModPrototype:DisableIEEUCombatDetection()
+	self.noIEEUDetection = true
+	if self.combatInfo then
+		self.combatInfo.noIEEUDetection = true
+	end
+end
+
+function bossModPrototype:DisableFriendlyDetection()
+	self.noFriendlyEngagement = true
+	if self.combatInfo then
+		self.combatInfo.noFriendlyEngagement = true
+	end
+end
+
+function bossModPrototype:DisableRegenDetection()
+	self.noRegenDetection = true
+	if self.combatInfo then
+		self.combatInfo.noRegenDetection = true
+	end
+end
+
+function bossModPrototype:DisableMultiBossPulls()
+	self.noMultiBoss = true
+	if self.combatInfo then
+		self.combatInfo.noMultiBoss = true
+	end
+end
+
+function bossModPrototype:EnableWBEngageSync()
+	self.WBEsync = true
+	if self.combatInfo then
+		self.combatInfo.WBEsync = true
+	end
+end
+
+function bossModPrototype:DisableBossDeathKill()
+	self.noBossDeathKill = true
+	if self.combatInfo then
+		self.combatInfo.noBossDeathKill = true
+	end
 end
 
 function bossModPrototype:RemoveOption(name)

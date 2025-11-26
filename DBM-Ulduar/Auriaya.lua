@@ -1,66 +1,59 @@
 local mod	= DBM:NewMod("Auriaya", "DBM-Ulduar")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220518110528")
+mod:SetRevision(("$Revision: 262 $"):sub(12, -3))
 
-mod:SetCreatureID(33515)
+mod:SetCreatureID(33515)--34014--Add this (kitties) to pull detection when it can be ignored in kill
+mod:SetEncounterID(1131)
+mod:SetModelID(28651)
 mod:RegisterCombat("combat")
+--mod:RegisterKill("kill", 33515)
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 64678 64389 312600 312953 64386 312602 312955 64688 64422 312601 312954",
-	"SPELL_AURA_APPLIED 64396 312603 312956 64455 312619 312972",
-	"SPELL_DAMAGE 64459 64675 312610 312963",
-	"SPELL_MISSED 64459 64675 312610 312963",
+	"SPELL_CAST_START 64678 64389 64386 64688 64422",
+	"SPELL_AURA_APPLIED 64396",
+	"SPELL_DAMAGE 64459 64675",
+	"SPELL_MISSED 64459 64675",
 	"UNIT_DIED"
 )
 
-local warnSwarm 		= mod:NewTargetAnnounce(312956, 2)
-local warnFearSoon	 	= mod:NewSoonAnnounce(312955, 1)
-local warnCatDied 		= mod:NewAnnounce("WarnCatDied", 3, 312972)
-local warnCatDiedOne	= mod:NewAnnounce("WarnCatDiedOne", 3, 312972)
+local warnSwarm 		= mod:NewTargetAnnounce(64396, 2)
+local warnFearSoon	 	= mod:NewSoonAnnounce(64386, 1)
+local warnCatDied 		= mod:NewAnnounce("WarnCatDied", 3, 64455)
+local warnCatDiedOne	= mod:NewAnnounce("WarnCatDiedOne", 3, 64455)
 
-local specWarnFear		= mod:NewSpecialWarningSpell(312955, nil, nil, nil, 2, 2)
+local specWarnFear		= mod:NewSpecialWarningSpell(64386, nil, nil, nil, 2, 2)
 local specWarnBlast		= mod:NewSpecialWarningInterrupt(64389, "HasInterrupt", nil, 2, 1, 2)
-local specWarnVoid 		= mod:NewSpecialWarningMove(312971, nil, nil, nil, 1, 2)
-local specWarnSonic		= mod:NewSpecialWarningMoveTo(312954, nil, nil, nil, 2, 2)
-local specWarnCat		= mod:NewSpecialWarningAddsCustom(312972, nil, nil, nil, 2, 2)
+local specWarnVoid 		= mod:NewSpecialWarningMove(64675, nil, nil, nil, 1, 2)
+local specWarnSonic		= mod:NewSpecialWarningMoveTo(64688, nil, nil, nil, 2, 2)
 
 local enrageTimer		= mod:NewBerserkTimer(600)
-local timerDefender 	= mod:NewTimer(30, "timerDefender", 64455, nil, nil, 1)
-local timerFear			= mod:NewCastTimer(312955, nil, nil, nil, 4)
-local timerNextFear 	= mod:NewNextTimer(35.5, 312955, nil, nil, nil, 4)
-local timerNextSwarm 	= mod:NewNextTimer(36, 312956, nil, nil, nil, 1)
-local timerNextSonic 	= mod:NewNextTimer(25, 312954, nil, nil, nil, 2)
-local timerSonic		= mod:NewCastTimer(312954, nil, nil, nil, 2)
-
--- mod:AddBoolOption("HealthFrame", true)
+local timerDefender 	= mod:NewTimer(35, "timerDefender", 64455, nil, nil, 1)
+local timerNextFear 	= mod:NewNextTimer(35.5, 64386, nil, nil, nil, 4)
+local timerNextSwarm 	= mod:NewNextTimer(36, 64396, nil, nil, nil, 1)
+local timerNextSonic 	= mod:NewNextTimer(27, 64688, nil, nil, nil, 2)
+local timerSonic		= mod:NewCastTimer(64688, nil, nil, nil, 2)
 
 mod.vb.catLives = 9
-mod.vb.DefenderCount = 0
+
 function mod:OnCombatStart(delay)
-	DBM:FireCustomEvent("DBM_EncounterStart", 33515, "Auriaya")
-	self.vb.catLives = 9
+	mod.vb.catLives = 9
 	enrageTimer:Start(-delay)
 	timerNextFear:Start(40-delay)
 	timerNextSonic:Start(60-delay)
 	timerDefender:Start(60-delay)
 end
 
-function mod:OnCombatEnd(wipe)
-	DBM:FireCustomEvent("DBM_EncounterEnd", 33515, "Auriaya", wipe)
-end
-
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(64678, 64389, 312600, 312953) then -- Sentinel Blast
+	if args:IsSpellID(64678, 64389) then -- Sentinel Blast
 		specWarnBlast:Show(args.sourceName)
 		specWarnBlast:Play("kickcast")
-	elseif args:IsSpellID(64386, 312602, 312955) then -- Terrifying Screech
+	elseif args.spellId == 64386 then -- Terrifying Screech
 		specWarnFear:Show()
 		specWarnFear:Play("fearsoon")
-		timerFear:Start()
 		timerNextFear:Schedule(2)
 		warnFearSoon:Schedule(34)
-	elseif args:IsSpellID(64688, 64422, 312601, 312954) then --Sonic Screech
+	elseif args:IsSpellID(64688, 64422) then --Sonic Screech
 		specWarnSonic:Show(TANK)
 		specWarnSonic:Play("gathershare")
 		timerSonic:Start()
@@ -69,18 +62,14 @@ function mod:SPELL_CAST_START(args)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	local spellId = args.spellId
-	if args:IsSpellID(64396, 312603, 312956) then -- Guardian Swarm
+	if args.spellId == 64396 then -- Guardian Swarm
 		warnSwarm:Show(args.destName)
 		timerNextSwarm:Start()
-	elseif args:IsSpellID(64455, 312619, 312972) then -- Feral Essence
-		specWarnCat:Show(args.destName)
-		DBM.BossHealth:AddBoss(34035, L.Defender:format(9))
 	end
 end
 
-function mod:SPELL_DAMAGE(_, _, _, destGUID, _, _, spellId)
-	if (spellId == 64459 or spellId == 64675 or spellId == 312610 or spellId == 312963) and destGUID == UnitGUID("player") and self:AntiSpam(3) then -- Feral Defender Void Zone
+function mod:SPELL_DAMAGE(_, _, _, _, destGUID, _, _, _, spellId)
+	if (spellId == 64459 or spellId == 64675) and destGUID == UnitGUID("player") and self:AntiSpam(3) then -- Feral Defender Void Zone
 		specWarnVoid:Show()
 		specWarnVoid:Play("runaway")
 	end
@@ -98,15 +87,7 @@ function mod:UNIT_DIED(args)
 			else
 				warnCatDied:Show(self.vb.catLives)
 				timerDefender:Start()
-			end
-			if self.Options.HealthFrame then
-				DBM.BossHealth:RemoveBoss(34035)
-				DBM.BossHealth:AddBoss(34035, L.Defender:format(self.vb.catLives))
-			end
-		else
-			if self.Options.HealthFrame then
-				DBM.BossHealth:RemoveBoss(34035)
-			end
+         	end
 		end
 	end
 end
