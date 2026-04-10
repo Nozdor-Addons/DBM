@@ -28,6 +28,7 @@ local warnPhase2Soon		= mod:NewPrePhaseAnnounce(2)
 local warnWingBuffet		= mod:NewSpellAnnounce(18500, 2, nil, "Tank")
 
 local timerNextFlameBreath	= mod:NewCDTimer(13.3, 18435, nil, "Tank", 2, 5)--13.3-20 Breath she does on ground in frontal cone.
+local timerWingBuffetCD		= mod:NewNextTimer(17.2, 18500, nil, "Tank", nil, 2)
 
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(2)..": 65% – 40%")
 
@@ -52,16 +53,23 @@ mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(3)..": 40% – 0%")
 
 local warnPhase3			= mod:NewPhaseAnnounce(3)
 local specWarnBellowingRoar	= mod:NewSpecialWarningSpell(18431, nil, nil, nil, 2, 2)
+local timerBellowingRoarCD	= mod:NewNextTimer(15, 18431, nil, nil, nil, 2)
+local timerBellowingRoarCast	= mod:NewCastTimer(2.5, 18431, nil, nil, nil, 2)
 
 mod.vb.warned_preP2 = false
 mod.vb.warned_preP3 = false
 mod.vb.whelpsCount = 0
+mod.vb.p2BreathCount = 0
+mod.vb.p3RoarCount = 0
 
 function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	self.vb.whelpsCount = 0
+	self.vb.p2BreathCount = 0
+	self.vb.p3RoarCount = 0
     self.vb.warned_preP2 = false
 	self.vb.warned_preP3 = false
+	timerWingBuffetCD:Start(11.7 - delay)
 	--timerAchieve:Start(-delay)
 	if self.Options.SoundWTF3 then
 		DBM:PlaySoundFile("Interface\\AddOns\\DBM-Onyxia\\sounds\\dps-very-very-slowly.ogg")
@@ -104,7 +112,18 @@ function mod:SPELL_CAST_START(args)
 	elseif args:IsSpellID(17086, 18351, 18564, 18576) or args:IsSpellID(18584, 18596, 18609, 18617) then	-- 1 ID for each direction
 		specWarnBreath:Show()
 		timerBreath:Start()
-		timerNextDeepBreath:Start()
+		if self.vb.phase == 2 then
+			self.vb.p2BreathCount = self.vb.p2BreathCount + 1
+			if self.vb.p2BreathCount == 1 then
+				timerNextDeepBreath:Start(21.7)
+			elseif self.vb.p2BreathCount == 2 then
+				timerNextDeepBreath:Start(34.0)
+			else
+				timerNextDeepBreath:Start(34.0)
+			end
+		else
+			timerNextDeepBreath:Start()
+		end
 --		preWarnDeepBreath:Schedule(35)              -- Pre-Warn Deep Breath
 	elseif args:IsSpellID(18435, 68970) then        -- Flame Breath (Ground phases)
 		timerNextFlameBreath:Start()
@@ -115,8 +134,24 @@ function mod:SPELL_CAST_START(args)
 	elseif spellId == 18431 then
 		specWarnBellowingRoar:Show()
 		specWarnBellowingRoar:Play("fearsoon")
+		timerBellowingRoarCast:Start()
+		if self.vb.phase == 3 then
+			self.vb.p3RoarCount = self.vb.p3RoarCount + 1
+			if self.vb.p3RoarCount == 1 then
+				timerBellowingRoarCD:Start(15.0)
+			elseif self.vb.p3RoarCount == 2 then
+				timerBellowingRoarCD:Start(22.2)
+			elseif self.vb.p3RoarCount == 3 then
+				timerBellowingRoarCD:Start(23.6)
+			else
+				timerBellowingRoarCD:Start(22.5)
+			end
+		else
+			timerBellowingRoarCD:Start(22.5)
+		end
 	elseif spellId == 18500 then
 		warnWingBuffet:Show()
+		timerWingBuffetCD:Start()
 	elseif spellId == 18392 then
 		self:BossTargetScanner(args.sourceGUID, "FireballTarget", 0.15, 12)
 	end
@@ -159,12 +194,14 @@ function mod:OnSync(msg)
 	if msg == "Phase2" then
 		self:SetStage(2)
 		self.vb.whelpsCount = 0
+		self.vb.p2BreathCount = 0
 		warnPhase2:Show()
 		--timerBigAddCD:Start(65)
---		preWarnDeepBreath:Schedule(72)	-- Pre-Warn Deep Breath
-		timerNextDeepBreath:Start(77) -- 67
+--		preWarnDeepBreath:Schedule(22.9)	-- Pre-Warn Deep Breath
+		timerNextDeepBreath:Start(27.9)
 		--timerAchieveWhelps:Start()
 		timerNextFlameBreath:Cancel()
+		timerWingBuffetCD:Stop()
 		self:ScheduleMethod(5, "Whelps")
 		if self.Options.SoundWTF3 then
 			self:Unschedule(DBM.PlaySoundFile, DBM)
@@ -177,7 +214,10 @@ function mod:OnSync(msg)
 		end
 	elseif msg == "Phase3" then
 		self:SetStage(3)
+		self.vb.p3RoarCount = 0
 		warnPhase3:Show()
+		timerBellowingRoarCD:Start(2.0)
+		timerWingBuffetCD:Start(11.7)
 		self:UnscheduleMethod("Whelps")
 		timerWhelps:Stop()
 		timerNextDeepBreath:Stop()

@@ -15,7 +15,7 @@ mod:RegisterCombat("combat")
 mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 67574 66013 67700 68509 68510 66012 10278",
 	"SPELL_AURA_REFRESH 67574 66013 67700 68509 68510 66012",
-	"SPELL_AURA_REMOVED 66013 67700 68509 68510 10278",
+	"SPELL_AURA_REMOVED 67574 66013 67700 68509 68510 10278",
 	"SPELL_CAST_START 66118 67630 68646 68647 66134",
 	"SPELL_CAST_SUCCESS 66012",
 	"CHAT_MSG_MONSTER_YELL",
@@ -61,6 +61,34 @@ mod:AddBoolOption("AnnouncePColdIconsRemoved", false, nil, nil, nil, nil, 66013)
 mod:AddBoolOption("RemoveHealthBuffsInP3", false)
 
 mod.vb.Burrowed = false
+local pendingPursueTarget
+local pursueSpellName = GetSpellInfo(67574)
+
+local function CheckPursueOnMe(self)
+	if not self:IsInCombat() then return end
+	for i = 1, 40 do
+		local name = UnitDebuff("player", i)
+		if not name then
+			break
+		end
+		if name == pursueSpellName then
+			specWarnPursue:Show()
+			specWarnPursue:Play("justrun")
+			specWarnPursue:ScheduleVoice(1.5, "keepmove")
+			break
+		end
+	end
+end
+
+local function DispatchPursue(self)
+	local target = pendingPursueTarget
+	pendingPursueTarget = nil
+	if not target or not self:IsInCombat() then return end
+	warnPursue:Show(target)
+	if self.Options.PursueIcon then
+		self:SetIcon(target, 8, 15)
+	end
+end
 
 local function Adds(self)
 	if self:IsInCombat() then
@@ -103,9 +131,9 @@ function mod:OnCombatStart(delay)
 	DBM:FireCustomEvent("DBM_EncounterStart", 34564, "Anub'arak")
 	self:SetStage(1)
 	self.vb.Burrowed = false
-	timerAdds:Start(10 - delay)
-	warnAdds:Schedule(10 - delay)
-	self:Schedule(10 - delay, Adds, self)
+	timerAdds:Start(5 - delay)
+	warnAdds:Schedule(5 - delay)
+	self:Schedule(5 - delay, Adds, self)
 	warnSubmergeSoon:Schedule(70 - delay)
 	timerSubmerge:Start(-delay)
 	if self:IsDifficulty("normal10") then
@@ -113,7 +141,7 @@ function mod:OnCombatStart(delay)
 	else
 		enrageTimer:Start(-delay)
 	end
-	timerFreezingSlash:Start(15 - delay)
+	timerFreezingSlash:Start(6.5 - delay)
 	if self:IsHeroic() then
 		timerShadowStrike:Start()
 		preWarnShadowStrike:Schedule(25.5 - delay)
@@ -134,16 +162,9 @@ end
 function mod:SPELL_AURA_APPLIED(args)
 	local spellId = args.spellId
 	if spellId == 67574 then -- Pursue
-		if args:IsPlayer() then
-			specWarnPursue:Show()
-			specWarnPursue:Play("justrun")
-			specWarnPursue:ScheduleVoice(1.5, "keepmove")
-		else
-			warnPursue:Show(args.destName)
-		end
-		if self.Options.PursueIcon then
-			self:SetIcon(args.destName, 8, 15)
-		end
+		self:Unschedule(CheckPursueOnMe)
+		self:Schedule(0.05, CheckPursueOnMe, self)
+		return
 	elseif args:IsSpellID(66013, 67700, 68509, 68510) then -- Penetrating Cold
 		timerPCold:Show()
 		if args:IsPlayer() then
@@ -165,7 +186,11 @@ end
 mod.SPELL_AURA_REFRESH = mod.SPELL_AURA_APPLIED
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args:IsSpellID(66013, 67700, 68509, 68510) then -- Penetrating Cold
+	if args.spellId == 67574 then -- Pursue
+		if self.Options.PursueIcon then
+			self:RemoveIcon(args.destName)
+		end
+	elseif args:IsSpellID(66013, 67700, 68509, 68510) then -- Penetrating Cold
 		if self.Options.SetIconsOnPCold then
 			self:RemoveIcon(args.destName)
 			if self.Options.AnnouncePColdIconsRemoved and DBM:GetRaidRank() > 1 then
@@ -178,7 +203,7 @@ function mod:SPELL_AURA_REMOVED(args)
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(66118, 67630, 68646, 68647) then -- Swarm (start p3)
+	if args:IsSpellID(66118, 67630, 68646, 68647) then
 		self:SetStage(3)
 		warnPhase3:Show()
 		warnEmergeSoon:Cancel()
@@ -193,7 +218,7 @@ function mod:SPELL_CAST_START(args)
 		if self.Options.RemoveHealthBuffsInP3 then
 			mod:ScheduleMethod(0.1, "RemoveBuffs")
 		end
-	elseif args.spellId == 66134 and self:IsHeroic() and self:AntiSpam(2, 1) then -- Shadow Strike
+	elseif args.spellId == 66134 and self:IsHeroic() and self:AntiSpam(2, 1) then
 		self:Unschedule(ShadowStrike)
 		ShadowStrike(self)
 		if self.Options.SpecWarn66134spell then
@@ -205,12 +230,12 @@ function mod:SPELL_CAST_START(args)
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
-	if args.spellId == 66012 then -- Freezing Slash (caught one log where AURA_APPLIED was not present in one of the casts, so start timer on cast success instead)
-		timerFreezingSlash:Start()
+	if args.spellId == 66012 then
+		timerFreezingSlash:Start(17)
 	end
 end
 
-function mod:CHAT_MSG_MONSTER_YELL(msg) -- Warmane workaround since submerge emote sometimes is not being fired
+function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if msg and msg == L.YellBurrow then
 		self:SetStage(2)
 		self.vb.Burrowed = true
@@ -225,11 +250,18 @@ function mod:CHAT_MSG_MONSTER_YELL(msg) -- Warmane workaround since submerge emo
 			timerShadowStrike:Cancel()
 			preWarnShadowStrike:Cancel()
 		end
-		self:Schedule(65, EmergeFix, self) -- Warmane workaround, since emerge boss emote is not being fired
+		self:Schedule(65, EmergeFix, self)
 	end
 end
 
 function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
+	local pursueTarget = msg and msg:match("|3%-3%((.-)%)!")
+	if msg and msg:find("преследуют") and pursueTarget then
+		pendingPursueTarget = pursueTarget
+		self:Unschedule(DispatchPursue)
+		self:Schedule(0.15, DispatchPursue, self)
+		return
+	end
 	-- if msg and msg:find(L.Burrow) then
 	-- 	self:SetStage(2)
 	-- 	self.vb.Burrowed = true
@@ -239,9 +271,9 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
 	-- 	warnEmergeSoon:Schedule(58.5)
 	-- 	timerEmerge:Start()
 	-- 	timerFreezingSlash:Stop()
-	-- 	self:Schedule(65, EmergeFix, self)	-- Warmane workaround, since emerge boss emote is not being fired
+	-- 	self:Schedule(65, EmergeFix, self)
 	if msg and msg:find(L.Emerge) then
-		self:Unschedule(EmergeFix) -- Warmane workaround: failsafe if script gets fixed eventually
+		self:Unschedule(EmergeFix)
 		self:SetStage(1)
 		self.vb.Burrowed = false
 		timerEmerge:Cancel()
@@ -257,7 +289,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
 	end
 end
 
-function mod:RemoveBuffs()                       -- Remove HP buffs for p3
+function mod:RemoveBuffs()
 	CancelUnitBuff("player", (GetSpellInfo(47440))) -- Commanding Shout
 	CancelUnitBuff("player", (GetSpellInfo(48161))) -- Power Word: Fortitude
 	CancelUnitBuff("player", (GetSpellInfo(48162))) -- Prayer of Fortitude
