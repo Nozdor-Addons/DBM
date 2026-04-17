@@ -41,7 +41,7 @@ local specWarnFelInferno        = mod:NewSpecialWarningMove(66496, nil, nil, nil
 local SpecWarnFelFireball       = mod:NewSpecialWarningInterrupt(66532, "HasInterrupt", nil, 2, 1, 2)
 local SpecWarnFelFireballDispel = mod:NewSpecialWarningDispel(66532, "RemoveMagic", nil, 2, 1, 2)
 
-local timerCombatStart          = mod:NewCombatTimer(20)
+local timerCombatStart          = mod:NewCombatTimer(32)
 local timerFlame                = mod:NewTargetTimer(8, 66197, nil, nil, nil, 3)
 local timerFlameCD              = mod:NewCDTimer(34.9, 66197, nil, nil, nil, 3)
 local timerNetherPowerCD        = mod:NewCDTimer(27.8, 67009, nil, "MagicDispeller", nil, 5, nil, CL.MAGIC_ICON)
@@ -230,6 +230,6 @@ mod.SPELL_MISSED = mod.SPELL_DAMAGE
 
 function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if msg == L.Pull20 or msg:find(L.Pull20) then
-		timerCombatStart:Start()
+		timerCombatStart:Start(32)
 	end
 end

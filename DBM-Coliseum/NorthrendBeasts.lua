@@ -241,7 +241,7 @@ end
 
 function mod:WormsSubmerge()
 	timerSubmerge:Cancel()
-	timerEmerge:Start((self.vb.AcidmawDead or self.vb.DreadscaleDead) and 8.5 or 6.8)
+	timerEmerge:Start(10)
 	timerSweepCD:Cancel()
 	timerSlimePoolCD:Cancel()
 	timerMoltenSpewCD:Cancel()
@@ -256,9 +256,9 @@ function mod:WormsSubmerge()
 	self:UnscheduleMethod("WormsAfterBurrowStateB")
 	self.vb.DreadscaleActive = not self.vb.DreadscaleActive
 	if self.vb.DreadscaleActive then
-		self:ScheduleMethod((self.vb.AcidmawDead or self.vb.DreadscaleDead) and 8.5 or 6.8, "WormsAfterBurrowStateB")
+		self:ScheduleMethod(10, "WormsAfterBurrowStateB")
 	else
-		self:ScheduleMethod((self.vb.AcidmawDead or self.vb.DreadscaleDead) and 8.5 or 6.8, "WormsAfterBurrowStateA")
+		self:ScheduleMethod(10, "WormsAfterBurrowStateA")
 	end
 end
 
@@ -473,8 +473,8 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		end
 		timerCombatStart:Start()
 	elseif msg == L.Phase2 or msg:find(L.Phase2) then
-		self:ScheduleMethod(13.5, "WormsPhaseOpen")
-		timerCombatStart:Start(11)
+		self:ScheduleMethod(15.4, "WormsPhaseOpen")
+		timerCombatStart:Start(15.4)
 		updateHealthFrame(2)
 		self:SetStage(2)
 		if self.Options.RangeFrame then
@@ -490,7 +490,7 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		self:UnscheduleMethod("WormsEmerge")
 		self:UnscheduleMethod("WormsAfterBurrowStateA")
 		self:UnscheduleMethod("WormsAfterBurrowStateB")
-		timerCombatStart:Start(5)
+		timerCombatStart:Start(11.4)
 		self.vb.crashCount = 0
 		self.vb.lastCrashEnd = 0
 		self.vb.crashBreaths = 0
