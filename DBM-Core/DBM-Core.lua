@@ -6035,6 +6035,7 @@ do
 		["WARRIOR"] = { 71, 72, 73 },
 		["PALADIN"] = { 65, 66, 70 },
 		["DEATHKNIGHT"] = { 250, 251, 252 },
+		["DEMONHUNTER"] = { 577, 581, 1480 },
 		["DRUID"] = { 102, 103, 104, 105 },
 		["HUNTER"] = { 253, 254, 255 },
 		["SHAMAN"] = { 262, 263, 264 }
@@ -6147,6 +6148,7 @@ do
 		["WARRIOR"] = 1446,
 		["DRUID"] = 1447,
 		["DEATHKNIGHT"] = 1455,
+		["DEMONHUNTER"] = 1456,
 		["HUNTER"] = 1448,
 		["PRIEST"] = 1452,
 		["ROGUE"] = 1453,
@@ -6161,6 +6163,9 @@ do
 			currentSpecID = tonumber(currentSpecID)
 		else
 			currentSpecID, currentSpecName = fallbackClassToRole[playerClass], playerClass
+		end
+		if not private.specRoleTable[currentSpecID] then
+			currentSpecID, currentSpecName = fallbackClassToRole[playerClass] or 1446, playerClass
 		end
 	end
 end
@@ -7568,7 +7573,7 @@ function bossModPrototype:CheckInterruptFilter(sourceGUID, force, checkCooldown,
 		(
 			UnitIsDeadOrGhost("player") or (GetSpellCooldown(6552)) ~= 0 or (GetSpellCooldown(47528)) ~= 0 or
 			(GetSpellCooldown(2139)) ~= 0 or (GetSpellCooldown(1766)) ~= 0 or (GetSpellCooldown(49377)) ~= 0 or
-			(GetSpellCooldown(15487)) ~= 0 or (GetSpellCooldown(57994)) ~= 0) then
+			(GetSpellCooldown(15487)) ~= 0 or (GetSpellCooldown(57994)) ~= 0 or (GetSpellCooldown(183752) or 0) ~= 0) then
 		InterruptAvailable = false --checkCooldown check requested and player has no spell that can interrupt available (or is dead)
 	end
 	local unitID = (UnitGUID("target") == sourceGUID) and "target" or (UnitGUID("focus") == sourceGUID) and "focus" or
@@ -7604,7 +7609,8 @@ do
 		if (GetSpellCooldown(2893)) ~= 0 or (GetSpellCooldown(8946)) ~= 0 or (GetSpellCooldown(2782)) ~= 0 or
 			(GetSpellCooldown(527)) ~= 0 or (GetSpellCooldown(528)) ~= 0 or (GetSpellCooldown(552)) ~= 0 or
 			(GetSpellCooldown(32375)) ~= 0 or (GetSpellCooldown(4987)) ~= 0 or (GetSpellCooldown(1152)) ~= 0 or
-			(GetSpellCooldown(51886)) ~= 0 or (GetSpellCooldown(526)) ~= 0 or (GetSpellCooldown(475)) ~= 0 then
+			(GetSpellCooldown(51886)) ~= 0 or (GetSpellCooldown(526)) ~= 0 or (GetSpellCooldown(475)) ~= 0 or
+			(GetSpellCooldown(371749) or 0) ~= 0 then
 			lastCheck = GetTime()
 			lastReturn = false
 			return false

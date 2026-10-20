@@ -281,7 +281,7 @@ function lib:INSPECT_TALENT_READY()
 			elseif (validateTrees) then
 				-- Double checking here. Check the tree name matches what we expect for this class
 				local _, class = UnitClass(self.lastInspectUnit)
-				if (tree1 ~= validateTrees[class]) then
+				if (validateTrees[class] and tree1 ~= validateTrees[class]) then
 					garbageQueue[self.lastInspectName] = self.lastInspectGUID
 					self:Reset()
 					self:CheckInspectQueue()
@@ -330,6 +330,7 @@ function lib:PLAYER_LOGIN()
 		WARLOCK = "Affliction",
 		WARRIOR = "Arms",
 		DEATHKNIGHT = "Blood",
+		DEMONHUNTER = "Havoc",
 		PALADIN = "Holy",
 		SHAMAN = "Elemental",
 		MAGE = "Arcane",

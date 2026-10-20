@@ -98,7 +98,7 @@ hooksecurefunc("WorldStateScoreFrame_Update", function()
 				name = format("%s|cffffffff - |r%s%s|r", name, color, realm)
 			end
 
-			classTextColor = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[classToken] or RAID_CLASS_COLORS[classToken]
+			classTextColor = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[classToken] or RAID_CLASS_COLORS[classToken] or NORMAL_FONT_COLOR
 
 			nameText = _G["WorldStateScoreButton"..i.."NameText"]
 			nameText:SetText(name)
