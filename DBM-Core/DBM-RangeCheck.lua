@@ -488,6 +488,7 @@ for k, v in pairs(RAID_CLASS_COLORS) do
 	--hexColors[k] = ("|cff%02x%02x%02x"):format(v.r * 255, v.g * 255, v.b * 255)
 	vertexColors[k] = { v.r, v.g, v.b }
 end
+vertexColors.DEMONHUNTER = vertexColors.DEMONHUNTER or { 0.64, 0.19, 0.79 }
 ---------------------
 --  Dropdown Menu  --
 ---------------------
@@ -1040,7 +1041,7 @@ do
 		end
 		if class and class == dots[id].class then return end
 
-		dots[id].dot:SetVertexColor(unpack(vertexColors[class]))
+		dots[id].dot:SetVertexColor(unpack(vertexColors[class] or vertexColors["PRIEST"]))
 		dots[id].class = class
 	end
 

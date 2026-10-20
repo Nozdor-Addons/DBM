@@ -189,6 +189,45 @@ local specRoleTable = {
 		["MeleeDps"] = true,
 		["Physical"] = true,
 	},
+	[577] = {	--Havoc Demon Hunter
+		["Dps"] = true,
+		["Melee"] = true,
+		["MeleeDps"] = true,
+		["Physical"] = true,
+		["RaidCooldown"] = true,--Darkness
+		["MagicDispeller"] = true,--Consume Magic
+		["RemoveMagic"] = true,--Reverse Magic
+		["HasInterrupt"] = true,
+		["WeaponDependent"] = true,
+	},
+	[581] = {	--Vengeance Demon Hunter
+		["Tank"] = true,
+		["Melee"] = true,
+		["Physical"] = true,
+		["RaidCooldown"] = true,--Darkness
+		["MagicDispeller"] = true,--Consume Magic
+		["RemoveMagic"] = true,--Reverse Magic
+		["HasInterrupt"] = true,
+		["WeaponDependent"] = true,
+	},
+	[1480] = {	--Devourer Demon Hunter
+		["Dps"] = true,
+		["Ranged"] = true,
+		["RangedDps"] = true,
+		["SpellCaster"] = true,
+		["CasterDps"] = true,
+		["RaidCooldown"] = true,--Darkness
+		["MagicDispeller"] = true,--Consume Magic
+		["RemoveMagic"] = true,--Reverse Magic
+		["HasInterrupt"] = true,
+	},
+	[1456] = {	--Initial Demon Hunter. Treated as hybrid
+		["Tank"] = true,
+		["Dps"] = true,
+		["Melee"] = true,
+		["MeleeDps"] = true,
+		["Physical"] = true,
+	},
 	[253] = {	--Beastmaster Hunter
 		["Dps"] = true,
 		["Ranged"] = true,

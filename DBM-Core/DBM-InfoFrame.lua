@@ -991,7 +991,7 @@ local function onUpdate(frame, table)
 			if unitId and UnitExists(unitId) then
 				local _, class = UnitClass(unitId)
 				if class then
-					color = RAID_CLASS_COLORS[class]
+					color = RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
 					if DBM.Options.StripServerName then -- StripServerName option is checked here, even though it's checked in GetShortServerName function, because we have to apply custom 3rd column hack reconstruction
 						local shortName = DBM:GetShortServerName(extraName or leftText)
 						if extraName then -- 3 column hack is present, we need to reconstruct leftText with shortened name
@@ -1041,7 +1041,7 @@ local function onUpdate(frame, table)
 			if unitId then -- Check left text
 				local _, class = UnitClass(unitId)
 				if class then
-					color = RAID_CLASS_COLORS[class]
+					color = RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
 					if DBM.Options.StripServerName then --StripServerName option is checked here, even though it's checked in GetShortServerName function, because we have to apply custom 3rd column hack reconstruction
 						local shortName = DBM:GetShortServerName(extraName or leftText)
 						if extraName then -- 3 column hack is present, we need to reconstruct leftText with shortened name
@@ -1058,7 +1058,7 @@ local function onUpdate(frame, table)
 			if unitId2 then -- Check right text
 				local _, class = UnitClass(unitId2)
 				if class then
-					color2 = RAID_CLASS_COLORS[class]
+					color2 = RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
 					rightText = DBM:GetShortServerName(rightText)
 				end
 			end

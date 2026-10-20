@@ -1218,6 +1218,8 @@ do
 
 				if (class == "PRIEST") then
 					role = ((t1 + t2) > t3) and "healer" or "caster"
+				elseif (class == "DEMONHUNTER") then
+					role = (t2 > t1 and t2 > t3) and "tank" or (t3 > t1 and t3 > t2) and "caster" or "melee"
 				elseif (class == "WARRIOR") then
 					role = ((t1 + t2) > t3) and "melee" or "tank"
 				else
